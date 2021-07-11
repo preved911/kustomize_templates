@@ -1,0 +1,56 @@
+apiVersion: clickhouse.altinity.com/v1
+kind: ClickHouseInstallation
+metadata:
+  name: test
+spec:
+  configuration:
+    clusters:
+    - layout:
+        replicasCount: 1
+        shardsCount: 1
+      name: default
+    profiles:
+      default/optimize_read_in_order: "1"
+    settings:
+      compression/case/method: zstd
+      disable_internal_dns_cache: "1"
+    users:
+      admin/networks/ip: 127.0.0.1/32
+      admin/password: admin
+      admin/profile: default
+      admin/quota: default
+  defaults:
+    templates:
+      dataVolumeClaimTemplate: data
+      podTemplate: pod
+      serviceTemplate: svc
+  templates:
+    podTemplates:
+    - name: pod
+      spec:
+        containers:
+        - image: yandex/clickhouse-server:21.6.5.37
+          name: clickhouse
+          resources:
+            limits:
+              cpu: 500m
+              memory: 4Gi
+    serviceTemplates:
+    - name: svc
+      spec:
+        ports:
+        - name: http
+          port: 8123
+          targetPort: 0
+        - name: tcp
+          port: 9000
+          targetPort: 0
+        type: ClusterIP
+    volumeClaimTemplates:
+    - name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
